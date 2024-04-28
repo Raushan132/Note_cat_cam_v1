@@ -29,6 +29,7 @@ import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
 import org.opencv.core.Scalar;
+import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
 import java.io.FileNotFoundException;
@@ -116,7 +117,9 @@ public class DeviceActivity extends AppCompatActivity {
                     InputStream is= getContentResolver().openInputStream(imageUri);
                     Bitmap bitmap = BitmapFactory.decodeStream(is);
                     image_selected_bitmap =bitmap;
-                    Utils.matToBitmap(putTextInImage(bitmap),bitmap);
+                    Mat newMat = putTextInImage(bitmap);
+                    bitmap = Bitmap.createBitmap(newMat.width(),newMat.height(), Bitmap.Config.ARGB_8888);
+                    Utils.matToBitmap(newMat,bitmap);
                     imageViewDevice = findViewById(R.id.image_view_device);
                     imageViewDevice.setImageBitmap(bitmap);
                     shareable_bitmap = bitmap;
@@ -142,8 +145,16 @@ public class DeviceActivity extends AppCompatActivity {
     }
 
     public Mat putTextInImage(Bitmap bitmap){
+
         Mat mat = new Mat();
         Utils.bitmapToMat(bitmap,mat);
+
+        if(mat.size().width>2000)
+        Imgproc.resize(mat,mat,new Size(0,0),0.3,0.3, Imgproc.INTER_AREA);
+        else if(mat.size().width>1500)
+            Imgproc.resize(mat,mat,new Size(0,0),0.6,0.6, Imgproc.INTER_AREA);
+        Log.e("size Of mat:",mat.size().toString());
+        Log.e("size Of mats:",mat.size().toString());
         SharedPreferences preferences = getSharedPreferences(StorageName.NOTE_CAT_CAM.name(), MODE_PRIVATE);
         String notes= preferences.getString(StorageVariable.NOTE.name(), "");
         calendar.set(year,month,day,hour,min);
@@ -161,7 +172,7 @@ public class DeviceActivity extends AppCompatActivity {
 
 
         if(currLocation!=null){
-            Imgproc.rectangle(overlay, new Point(rectX, rectY+(notes_empty?30:0)), new Point(rectX + rectWidth, rectY + rectHeight), rectColor, rectThickness);
+           Imgproc.rectangle(overlay, new Point(rectX, rectY+(notes_empty?30:0)), new Point(rectX + rectWidth, rectY + rectHeight), rectColor, rectThickness);
 
             // Blend the overlay with the original frame
             Core.addWeighted(overlay, 0.5, mat, 0.5, 0, mat);
@@ -171,7 +182,8 @@ public class DeviceActivity extends AppCompatActivity {
             Imgproc.putText(mat, "Accuracy:  "+currLocation.getAccuracy() , new Point(rectX + 10, rectY + rectHeight - 50-extraHeight), Imgproc.FONT_HERSHEY_SIMPLEX, 0.6, textColor, 2);
 
         }else{
-            Imgproc.rectangle(overlay, new Point(rectX, rectY+150-extraHeight), new Point(rectX + rectWidth, rectY + rectHeight), rectColor, rectThickness);
+            Imgproc.rectangle(overlay, new Point(rectX, rectY+(notes_empty?30:0)), new Point(rectX + rectWidth, rectY + rectHeight), rectColor, rectThickness);
+//            Imgproc.rectangle(overlay, new Point(rectX, rectY+150-extraHeight), new Point(rectX + rectWidth, rectY + rectHeight), rectColor, rectThickness);
 
             // Blend the overlay with the original frame
             Core.addWeighted(overlay, 0.5, mat, 0.5, 0, mat);
